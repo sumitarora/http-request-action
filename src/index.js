@@ -25,13 +25,16 @@ if (!!core.getInput('bearerToken')) {
 
 /** @type {axios.AxiosRequestConfig} */
 const instanceConfig = {
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false,
+  }),
   baseURL: core.getInput('url', { required: true }),
   timeout: parseInt(core.getInput('timeout') || 5000, 10),
   headers: { ...headers, ...customHeaders }
 }
 
 if (!!core.getInput('httpsCA')) {
-  instanceConfig.httpsAgent = new https.Agent({ ca: core.getInput('httpsCA') })
+  instanceConfig.httpsAgent = new https.Agent({ ca: core.getInput('httpsCA'), rejectUnauthorized: false, })
 }
 
 if (!!core.getInput('username') || !!core.getInput('password')) {

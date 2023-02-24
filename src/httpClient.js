@@ -4,6 +4,8 @@ const axios = require('axios');
 const FormData = require('form-data')
 const fs = require('fs')
 const url = require('url');
+const https = require('https');
+
 const { GithubActions } = require('./githubActions');
 
 const METHOD_GET = 'GET'
@@ -74,6 +76,9 @@ const request = async({ method, instanceConfig, data, files, file, actions, igno
       maxBodyLength: Infinity
     }
 
+    instanceConfig.httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
     actions.debug('Instance Configuration: ' + JSON.stringify(instanceConfig))
     
     /** @type {axios.AxiosInstance} */

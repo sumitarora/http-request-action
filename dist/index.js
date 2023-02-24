@@ -5068,6 +5068,8 @@ const axios = __nccwpck_require__(8757);
 const FormData = __nccwpck_require__(4334)
 const fs = __nccwpck_require__(7147)
 const url = __nccwpck_require__(7310);
+const https = __nccwpck_require__(5687);
+
 const { GithubActions } = __nccwpck_require__(8169);
 
 const METHOD_GET = 'GET'
@@ -5138,6 +5140,9 @@ const request = async({ method, instanceConfig, data, files, file, actions, igno
       maxBodyLength: Infinity
     }
 
+    instanceConfig.httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
     actions.debug('Instance Configuration: ' + JSON.stringify(instanceConfig))
     
     /** @type {axios.AxiosInstance} */
@@ -5406,7 +5411,7 @@ module.exports = require("zlib");
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
-// Axios v1.3.2 Copyright (c) 2023 Matt Zabriskie and contributors
+// Axios v1.3.3 Copyright (c) 2023 Matt Zabriskie and contributors
 
 
 const FormData$1 = __nccwpck_require__(4334);
@@ -6989,9 +6994,13 @@ function isValidHeaderName(str) {
   return /^[-_a-zA-Z]+$/.test(str.trim());
 }
 
-function matchHeaderValue(context, value, header, filter) {
+function matchHeaderValue(context, value, header, filter, isHeaderNameFilter) {
   if (utils.isFunction(filter)) {
     return filter.call(this, value, header);
+  }
+
+  if (isHeaderNameFilter) {
+    value = header;
   }
 
   if (!utils.isString(value)) return;
@@ -7137,7 +7146,7 @@ class AxiosHeaders {
 
     while (i--) {
       const key = keys[i];
-      if(!matcher || matchHeaderValue(this, this[key], key, matcher)) {
+      if(!matcher || matchHeaderValue(this, this[key], key, matcher, true)) {
         delete this[key];
         deleted = true;
       }
@@ -7356,7 +7365,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-const VERSION = "1.3.2";
+const VERSION = "1.3.3";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -8066,7 +8075,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       if (!headers.hasContentLength()) {
         try {
           const knownLength = await util__default["default"].promisify(data.getLength).call(data);
-          headers.setContentLength(knownLength);
+          Number.isFinite(knownLength) && knownLength >= 0 && headers.setContentLength(knownLength);
           /*eslint no-empty:0*/
         } catch (e) {
         }
@@ -9665,13 +9674,16 @@ if (!!core.getInput('bearerToken')) {
 
 /** @type {axios.AxiosRequestConfig} */
 const instanceConfig = {
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false,
+  }),
   baseURL: core.getInput('url', { required: true }),
   timeout: parseInt(core.getInput('timeout') || 5000, 10),
   headers: { ...headers, ...customHeaders }
 }
 
 if (!!core.getInput('httpsCA')) {
-  instanceConfig.httpsAgent = new https.Agent({ ca: core.getInput('httpsCA') })
+  instanceConfig.httpsAgent = new https.Agent({ ca: core.getInput('httpsCA'), rejectUnauthorized: false, })
 }
 
 if (!!core.getInput('username') || !!core.getInput('password')) {
